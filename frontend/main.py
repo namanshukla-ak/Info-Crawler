@@ -417,9 +417,29 @@ if st.session_state.run_id:
                 time.sleep(2)  # Wait 2 seconds before auto-refresh
                 st.rerun()
             
-            # Export section
+            # Export section and fetch data when completed
             if status.get("status") == "completed":
                 st.success("✅ Workflow completed successfully!")
+                
+                # Automatically fetch all workflow data in a single API call
+                if not st.session_state.bios_data and not st.session_state.jobs_data and not st.session_state.news_data:
+                    with st.spinner("Loading workflow data..."):
+                        # Use the new endpoint to get all data at once
+                        result = make_api_request(f"/workflows/{st.session_state.run_id}/data", "GET")
+                        if result and "data" in result:
+                            workflow_data = result["data"]
+                            
+                            # Update session state with all data
+                            if workflow_data.get("bios"):
+                                st.session_state.bios_data = workflow_data["bios"]
+                            if workflow_data.get("jobs"):
+                                st.session_state.jobs_data = workflow_data["jobs"]
+                            if workflow_data.get("news"):
+                                st.session_state.news_data = workflow_data["news"]
+                            
+                            st.success("✨ Data loaded successfully! Check the tabs below.")
+                
+                st.info("💡 **Tip:** Scroll down to see the data in the tabs below!")
                 
                 if st.button("📥 Get Export Files"):
                     exports = get_export_urls(st.session_state.run_id)
